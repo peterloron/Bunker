@@ -1,6 +1,7 @@
 require 'rubygems' if RUBY_VERSION < '1.9'
+require 'jsonable'
 
-class Secret
+class Secret < JSONable
 	@path = ''
 	@description = ''
 	@value = ''

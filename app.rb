@@ -11,7 +11,7 @@ require 'user'
 config_file 'config.yml'
 
 # connect to db
-@db = Sequel.sqlite(settings.db_file)
+$db = Sequel.sqlite(settings.db_file)
 
 
 #######################################################
@@ -26,12 +26,12 @@ end
 #######################################################
 # User Routes
 
-get '/user/:filter/:value' do
+get '/user/:value' do
 	#retrieves a user from the database
-	#user = get_user(params['filter'], params['value'])
-	#ds = @db[:user].filter('username = ?', params['value'])
-	ds = @db[:user]
-	puts ds.first
+	usr = get_user(params['value'])
+
+	content_type :json
+	usr.to_json
 end
 
 put '/user' do
@@ -69,7 +69,12 @@ delete '/secret/:id' do
 end
 
 
-# def get_user(filter, value)
-# 	ds = @db[:user].filter('username = ?', value)
-# 	puts ds.first
-# end
+def get_user(value)
+	ds = $db[:user].filter('username = ?', value).first
+	usr = User.new()
+	usr.username = ds[:username]
+	usr.fullname = ds[:fullname]
+	usr.groups = ds[:groups].split(",")
+	usr.email = ds[:email]
+	return usr
+end
