@@ -28,16 +28,43 @@ end
 
 get '/user/:value' do
 	#retrieves a user from the database
-	usr = get_user(params['value'])
-
 	content_type :json
-	usr.to_json
+	begin
+		usr = User.new()
+		usr.load(params['value'])
+		status 200
+		usr.to_json
+	rescue => e
+		puts e.message
+		status 500
+		body "{\"message\": \"#{e.message}\"}"
+	end
 end
 
 put '/user' do
 	# create a new user
-	data = JSON.parse(request.body.read)
-	db.execute "INSERT INTO user VALUES(NULL,'#{data['username']}', '#{data['fullname']}', '#{data['email']}', '#{data['groups']}')"
+	content_type :json
+
+	puts "Inserting user..."
+	begin
+		data = JSON.parse(request.body.read)
+		usr = User.new()
+		usr.username = data['username']
+		usr.fullname = data['fullname']
+		usr.email = data['email']
+		usr.groups = data['groups']
+		usr.save
+
+		body "{'message': 'Insert OK'}"
+		status 200
+	rescue => e
+		puts e.message
+		body "{\"message\": \"#{e.message}\"}"
+		status 500
+	ensure
+
+	end
+	puts "Done inserting."
 end
 
 post '/user' do
@@ -51,13 +78,39 @@ end
 
 #######################################################
 # Secret Routes
-get '/secret/:param/:value' do
+get '/secret/:value' do
 	#retrieves a secret from the database
+	content_type :json
 
+	begin
+		sec = Secret.new()
+		sec.load(params['value'])
+		status 200
+		sec.to_json
+	rescue => e
+		puts e.message
+		body "{\"message\": \"#{e.message}\"}"
+		status 500
+	end
 end
 
-put '/secret/:id' do
+put '/secret' do
 	# create a new secret
+	content_type :json
+	begin
+		data = JSON.parse(request.body.read)
+		sec = Secret.new()
+		sec.path = data['path']
+		sec.desc = data['desc']
+		sec.value = data['value']
+		sec.save
+		body "{\"message\": \"Secret created.\"}"
+		status 200
+	rescue => e
+		puts e.message
+		body "{\"message\": \"#{e.message}\"}"
+		status 500
+	end
 end
 
 post '/secret' do
@@ -69,12 +122,12 @@ delete '/secret/:id' do
 end
 
 
-def get_user(value)
-	ds = $db[:user].filter('username = ?', value).first
-	usr = User.new()
-	usr.username = ds[:username]
-	usr.fullname = ds[:fullname]
-	usr.groups = ds[:groups].split(",")
-	usr.email = ds[:email]
-	return usr
-end
+# def get_user(value)
+# 	ds = $db[:user].filter('username = ?', value).first
+# 	usr = User.new()
+# 	usr.username = ds[:username]
+# 	usr.fullname = ds[:fullname]
+# 	usr.groups = ds[:groups].split(",")
+# 	usr.email = ds[:email]
+# 	return usr
+# end
