@@ -69,10 +69,53 @@ end
 
 post '/user' do
 	# update existing user
+	content_type :json
+
+	puts "Updating user..."
+	begin
+		data = JSON.parse(request.body.read)
+		usr = User.new()
+		usr.load(data['username'])
+
+		usr.username = data['username']
+		usr.fullname = data['fullname']
+		usr.email = data['email']
+		usr.groups = data['groups']
+		usr.save
+
+		body "{'message': 'Update OK'}"
+		status 200
+	rescue => e
+		puts e.message
+		body "{\"message\": \"#{e.message}\"}"
+		status 500
+	ensure
+
+	end
+	puts "Done inserting."
 end
 
-delete '/user/:id' do
+delete '/user' do
 	# delete an existing user
+	content_type :json
+
+	puts "Deleting user..."
+	begin
+		data = JSON.parse(request.body.read)
+		usr = User.new()
+		usr.load(data['username'])
+		usr.delete
+
+		body "{'message': 'Delete OK'}"
+		status 200
+	rescue => e
+		puts e.message
+		body "{\"message\": \"#{e.message}\"}"
+		status 500
+	ensure
+
+	end
+	puts "Done deleting."
 end
 
 
@@ -115,19 +158,39 @@ end
 
 post '/secret' do
 	# update existing secret
+	content_type :json
+	begin
+		data = JSON.parse(request.body.read)
+		sec = Secret.new()
+		sec.load(data['path'])
+		sec.path = data['path']
+		sec.desc = data['desc']
+		sec.value = data['value']
+		sec.save
+		body "{\"message\": \"Secret updated.\"}"
+		status 200
+	rescue => e
+		puts e.message
+		body "{\"message\": \"#{e.message}\"}"
+		status 500
+	end
+
 end
 
-delete '/secret/:id' do
+delete '/secret' do
 	# delete an existing secret
+	content_type :json
+	begin
+		data = JSON.parse(request.body.read)
+		sec = Secret.new()
+		sec.load(params['value'])
+		sec.delete
+		body "{\"message\": \"Secret deleted.\"}"
+		status 200
+	rescue => e
+		puts e.message
+		body "{\"message\": \"#{e.message}\"}"
+		status 500
+	end
+
 end
-
-
-# def get_user(value)
-# 	ds = $db[:user].filter('username = ?', value).first
-# 	usr = User.new()
-# 	usr.username = ds[:username]
-# 	usr.fullname = ds[:fullname]
-# 	usr.groups = ds[:groups].split(",")
-# 	usr.email = ds[:email]
-# 	return usr
-# end

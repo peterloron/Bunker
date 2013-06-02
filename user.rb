@@ -7,6 +7,7 @@ class User < JSONable
 	@fullname = ''
 	@email = ''
 	@groups = []
+	@in_db = false
 
 	attr_accessor :username
 	attr_accessor :fullname
@@ -14,7 +15,12 @@ class User < JSONable
 	attr_accessor :groups
 
 	def save
-		$db[:user].insert([:username, :fullname, :email, :groups], [@username, @fullname, @email, @groups])
+		if @in_db
+			$db[:user].where('username = ?', @username).update(:username => @username, :fullname => @fullname, :email => @email, :groups => @groups)
+		else
+			$db[:user].insert([:username, :fullname, :email, :groups], [@username, @fullname, @email, @groups])
+			@in_db = true
+		end
 	end
 
 	def load(username)
@@ -23,5 +29,11 @@ class User < JSONable
 		@fullname = ds[:fullname]
 		@groups = ds[:groups].split(",")
 		@email = ds[:email]
+		@in_db = true
 	end
+
+	def delete()
+		$db[:user].where('username = ?', @username).delete
+	end
+
 end

@@ -8,6 +8,7 @@ CONSTRAINT "unique_path" UNIQUE ( "path" ) )
 CREATE TABLE "user"(
 	"id"       Integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 	"username" Text NOT NULL,
+	"pwhash"   Text NOT NULL,
 	"email"    Text NOT NULL,
 	"fullname" Text NOT NULL,
 	"groups"   Text NOT NULL,
