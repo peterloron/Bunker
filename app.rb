@@ -5,8 +5,22 @@ require 'sinatra'
 require 'sinatra/config_file'
 require 'sequel'
 require 'json'
+require 'digest'
 require 'secret'
 require 'user'
+
+helpers do
+  def protected!
+    return if authorized?
+    headers['WWW-Authenticate'] = 'Basic realm="Restricted Area"'
+    halt 401, "Not authorized\n"
+  end
+
+  def authorized?
+    @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+    @auth.provided? and @auth.basic? and @auth.credentials and @auth.credentials == ['admin', 'admin']
+  end
+end
 
 config_file 'config.yml'
 
@@ -16,7 +30,20 @@ $db = Sequel.sqlite(settings.db_file)
 
 #######################################################
 # Login Routes
-get '/login/:username/:password' do
+get '/auth/:username' do
+	content_type :json
+	begin
+		data = JSON.parse(request.body.read)
+		usr = User.new()
+		usr.load(params['username'])
+		status 200
+		usr.to_json
+	rescue => e
+		puts e.message
+		status 500
+		body "{\"message\": \"#{e.message}\"}"
+	end
+
 end
 
 get '/logout' do
@@ -26,14 +53,17 @@ end
 #######################################################
 # User Routes
 
-get '/user/:value' do
+get '/user/:username' do
+	protected!
 	#retrieves a user from the database
 	content_type :json
 	begin
+
 		usr = User.new()
-		usr.load(params['value'])
+		usr.load(params['username'])
+
 		status 200
-		usr.to_json
+		body usr.to_json
 	rescue => e
 		puts e.message
 		status 500
@@ -53,6 +83,7 @@ put '/user' do
 		usr.fullname = data['fullname']
 		usr.email = data['email']
 		usr.groups = data['groups']
+		usr.pwhash = Digest::SHA1.hexdigest(data['password'])
 		usr.save
 
 		body "{'message': 'Insert OK'}"
@@ -191,6 +222,17 @@ delete '/secret' do
 		puts e.message
 		body "{\"message\": \"#{e.message}\"}"
 		status 500
+	end
+end
+
+def check_auth(data)
+	usr = User.new()
+	usr.load(data['username'])
+
+	if Digest::SHA1.hexdigest(data['password']) == usr.pwhash
+		return true
+	else
+		return false
 	end
 
 end

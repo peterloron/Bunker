@@ -7,18 +7,20 @@ class User < JSONable
 	@fullname = ''
 	@email = ''
 	@groups = []
+	@pwhash = ''
 	@in_db = false
 
 	attr_accessor :username
 	attr_accessor :fullname
 	attr_accessor :email
 	attr_accessor :groups
+	attr_accessor :pwhash
 
 	def save
 		if @in_db
 			$db[:user].where('username = ?', @username).update(:username => @username, :fullname => @fullname, :email => @email, :groups => @groups)
 		else
-			$db[:user].insert([:username, :fullname, :email, :groups], [@username, @fullname, @email, @groups])
+			$db[:user].insert([:username, :pwhash, :fullname, :email, :groups], [@username, @pwhash, @fullname, @email, @groups])
 			@in_db = true
 		end
 	end
@@ -29,6 +31,7 @@ class User < JSONable
 		@fullname = ds[:fullname]
 		@groups = ds[:groups].split(",")
 		@email = ds[:email]
+		@pwhash = ds[:pwhash]
 		@in_db = true
 	end
 
