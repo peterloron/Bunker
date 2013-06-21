@@ -1,4 +1,5 @@
 # myapp.rb
+# encoding: utf-8
 require 'rubygems' if RUBY_VERSION < '1.9'
 require 'bundler/setup'
 require 'sinatra/base'
@@ -6,10 +7,15 @@ require 'sinatra/config_file'
 require 'sequel'
 require 'json'
 require 'digest'
-require 'secret'
-require 'user'
+require 'debugger'
+require 'pry-debugger'
+require './secret'
+require './user'
 
 class Bunker < Sinatra::Base
+	register Sinatra::ConfigFile
+
+	set :environment, :development
 
 	helpers do
 	  def protected!
@@ -22,6 +28,8 @@ class Bunker < Sinatra::Base
 	    @auth ||=  Rack::Auth::Basic::Request.new(request.env)
 	    @auth.provided? and @auth.basic? and @auth.credentials and @auth.credentials == ['admin', 'admin']
 	  end
+
+
 	end
 
 	config_file 'config.yml'
@@ -43,7 +51,7 @@ class Bunker < Sinatra::Base
 		rescue => e
 			puts e.message
 			status 500
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 		end
 
 	end
@@ -69,7 +77,7 @@ class Bunker < Sinatra::Base
 		rescue => e
 			puts e.message
 			status 500
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 		end
 	end
 
@@ -87,15 +95,13 @@ class Bunker < Sinatra::Base
 			usr.email = data['email']
 			usr.groups = data['groups']
 			usr.pwhash = Digest::SHA1.hexdigest(data['password'])
-			puts data['groups'].inspect
-			puts usr.groups
 			usr.save
 
-			#body "{\"message\": \"Insert OK\"}"
+			body '{"message": "Insert OK"}'
 			status 200
 		rescue => e
 			puts e.message
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 			status 500
 		ensure
 
@@ -114,22 +120,25 @@ class Bunker < Sinatra::Base
 			usr = User.new()
 			usr.load(data['username'])
 
-			usr.username = data['username']
-			usr.fullname = data['fullname']
-			usr.email = data['email']
-			usr.groups = data['groups']
+			usr.fullname = data['fullname'] if data['fullname']
+			usr.email = data['email'] if data['email']
+			usr.groups = data['groups'] if data['groups']
+
+			binding.pry
+
+			usr.pwhash = Digest::SHA1.hexdigest(data['password']) if data['password']
 			usr.save
 
-			body "{'message': 'Update OK'}"
+			body '{"message": "Update OK"}'
 			status 200
 		rescue => e
 			puts e.message
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 			status 500
 		ensure
 
 		end
-		puts "Done inserting."
+		puts "Done updating."
 	end
 
 	delete '/user' do
@@ -144,11 +153,11 @@ class Bunker < Sinatra::Base
 			usr.load(data['username'])
 			usr.delete
 
-			body "{'message': 'Delete OK'}"
+			body '{"message": "Delete OK"}'
 			status 200
 		rescue => e
 			puts e.message
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 			status 500
 		ensure
 
@@ -171,7 +180,7 @@ class Bunker < Sinatra::Base
 			sec.to_json
 		rescue => e
 			puts e.message
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 			status 500
 		end
 	end
@@ -187,11 +196,11 @@ class Bunker < Sinatra::Base
 			sec.desc = data['desc']
 			sec.value = data['value']
 			sec.save
-			body "{\"message\": \"Secret created.\"}"
+			body '{"message": "Insert OK"}'
 			status 200
 		rescue => e
 			puts e.message
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 			status 500
 		end
 	end
@@ -208,11 +217,11 @@ class Bunker < Sinatra::Base
 			sec.desc = data['desc']
 			sec.value = data['value']
 			sec.save
-			body "{\"message\": \"Secret updated.\"}"
+			body '{"message": "Update OK"}'
 			status 200
 		rescue => e
 			puts e.message
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 			status 500
 		end
 
@@ -227,11 +236,11 @@ class Bunker < Sinatra::Base
 			sec = Secret.new()
 			sec.load(params['value'])
 			sec.delete
-			body "{\"message\": \"Secret deleted.\"}"
+			body '{"message": "Delete OK"}'
 			status 200
 		rescue => e
 			puts e.message
-			body "{\"message\": \"#{e.message}\"}"
+			body '{"message": "%s"}' % [e.message]
 			status 500
 		end
 	end
@@ -247,4 +256,7 @@ class Bunker < Sinatra::Base
 		end
 
 	end
+
+	  # start the server if ruby file executed directly
+  run! if app_file == $0
 end

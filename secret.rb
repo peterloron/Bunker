@@ -1,5 +1,5 @@
 require 'rubygems' if RUBY_VERSION < '1.9'
-require 'jsonable'
+require './jsonable'
 require 'sequel'
 
 class Secret < JSONable

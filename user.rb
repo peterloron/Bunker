@@ -1,5 +1,5 @@
 require 'rubygems' if RUBY_VERSION < '1.9'
-require 'jsonable'
+require './jsonable'
 require 'sequel'
 
 class User < JSONable
@@ -18,9 +18,9 @@ class User < JSONable
 
 	def save
 		if @in_db
-			$db[:user].where('username = ?', @username).update(:username => @username, :fullname => @fullname, :email => @email, :groups => @groups)
+			$db[:user].where('username = ?', @username).update(:username => @username, :fullname => @fullname, :email => @email, :groups => @groups.join(","), :pwhash => @pwhash)
 		else
-			$db[:user].insert([:username, :pwhash, :fullname, :email, :groups], [@username, @pwhash, @fullname, @email, @groups])
+			$db[:user].insert([:username, :pwhash, :fullname, :email, :groups], [@username, @pwhash, @fullname, @email, @groups.join(",")])
 			@in_db = true
 		end
 	end
